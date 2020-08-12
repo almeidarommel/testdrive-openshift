@@ -1,0 +1,32 @@
+---
+- name: Delete all 3 Hosts for OpenShift TestDrive@Ops{{ ':' }} Master, Infra and Node
+  hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - gce/authentication
+     - gce/defaults
+     - notification/slack_authentication
+  vars:
+     attendees: "{{ lookup('file', 'ops-attendees.txt').split('\n') }}"
+  tasks:
+     - include_tasks: commons/setting_defaults.yaml
+
+     - name: email is not defined
+       fail: msg="email is not defined"
+       when: email is not defined
+
+### USERNAME LOOKUP USERNAME LOOKUP USERNAME LOOKUP USERNAME LOOKUP USERNAME
+#### USERNAME LOOKUP USERNAME LOOKUP USERNAME LOOKUP USERNAME LOOKUP USERNAME
+     - name: Lookup for this email{{ ':' }} {{ email }}
+       set_fact: line_selected={{ item }}
+       with_items: "{{ attendees }}"
+       when: email in item
+
+     - fail: msg="{{ email }} wasn't found into file ops-attendees.txt"
+       when: line_selected is not defined
+
+     - set_fact: user_id={{ line_selected.split(',')[0] }}
+     - set_fact: name={{ line_selected.split(',')[1] }}
+
+     - include_tasks: commons/delete-single-cd.yaml
